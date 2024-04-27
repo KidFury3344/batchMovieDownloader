@@ -31,9 +31,12 @@ def getMovieNameYear(roughName):
                 error.set(f"{name} Not Found On TMDB")
                 return [f"{name}", 0]
         movieYear = movieYear[-4:]
+        name = roughName.replace("-", " ").title()
+        print(f"{name} Found On TMDB")
         return [movieName, movieYear]
     else:
         name = roughName.replace("-", " ").title()
+        print(f"{name} Not Found On TMDB")
         error.set(f"{name} Not Found On TMDB")
         return [f"{name}", 0]
 
@@ -56,9 +59,12 @@ def getMovieTorrentLinks(name, date):
             quality = results.get_text()
             link = results.get("href")
             downloadDict[quality] = link
+        name = name.replace("%20", " ").title()
+        print(f"{name} Found On YTS, Torrent Added")
         return downloadDict
     else:
         name = name.replace("%20", " ").title()
+        print(f"{name} Not Found On YTS")
         error.set(f"{name} Not Found On YTS")
         return {f"{name}": 0}
 
