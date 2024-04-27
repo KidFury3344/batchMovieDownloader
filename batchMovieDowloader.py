@@ -1,8 +1,13 @@
-from bs4 import BeautifulSoup
-import requests
-import os
-from tkinter import *
-from tkinter import ttk, filedialog, messagebox
+try:
+    from bs4 import BeautifulSoup
+    import requests
+    import os
+    from tkinter import *
+    from tkinter import ttk, filedialog, messagebox
+except:
+    os.system("pip install beautifulsoup4")
+    os.system("pip install requests")
+    os.system("pip install lxml")
 
 
 headers = {'Accept-Language': 'en-US', 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/97.0.4692.99 Safari/537.36'}
@@ -159,7 +164,6 @@ def done(outputMessage):
 
 root = Tk()
 root.title("Batch Movie Downloader")
-
 mainframe = ttk.Frame(root) 
 mainframe.grid(column=0, row=0)
 root.columnconfigure(0, weight=1)
@@ -175,21 +179,16 @@ pathToFile_Entry = ttk.Entry(mainframe, width=50, textvariable=pathToFile)
 pathToFile_Entry.grid(column=3, row=2 ,sticky=(N,S,E,W))
 chooseFile = ttk.Button(mainframe, text="Choose File", command=browseFiles).grid(column=2, row=2, sticky=(N, S, W, E))
 getLink = ttk.Button(mainframe, text="Execute", command=execute).grid(column=3, row=3,rowspan=2, sticky=(N, S, W, E))
-
 error = StringVar()
 errorPrompt = ttk.Label(mainframe,width=100, textvariable=error, foreground="red")
 choose = StringVar(value="0")
 seven20 = ttk.Radiobutton(mainframe, text="720p", variable=choose, value = "720p").grid(column=0, row=3, sticky=(W, E))
 ten80 = ttk.Radiobutton(mainframe, text="1080p", variable=choose, value = "1080p").grid(column=0, row=4, sticky=(W, E))
-
 check = IntVar()
 AriaCheck = ttk.Checkbutton(mainframe, text="Aria2c In Environment Path", variable=check, onvalue=1).grid(column= 0, row=5, sticky=(W,E))
 downloadTorrent = ttk.Checkbutton(mainframe, text="Download Torrent Files", variable=check, onvalue=2).grid(column= 0, row=6, sticky=(W,E))
 check.set(0)
-
-
 for child in mainframe.winfo_children(): 
     child.grid_configure(padx=5, pady=5)
-
 root.mainloop()
 
