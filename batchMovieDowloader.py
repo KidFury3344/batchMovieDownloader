@@ -13,29 +13,27 @@ except:
 headers = {'Accept-Language': 'en-US', 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/97.0.4692.99 Safari/537.36'}
 
 def getMovieNameYear(roughName):
-    name = roughName.replace(" ", "-").lower()
-    tmdbUrl = f"https://www.themoviedb.org/search?query={name}"
+    name = roughName.replace(" ", "%20").lower()
+    tmdbUrl = f"https://www.themoviedb.org/search?query={name}" 
     request = requests.get(tmdbUrl, headers=headers)
     soup = BeautifulSoup(request.content,"lxml")
-    searchResults = soup.find(class_="title")
+    searchResults = soup.find("h2")
     if searchResults:
-        if searchResults.span != None:
-            movieName = searchResults.a.get_text()
-            movieYear = searchResults.span.get_text()
-        else:
-            try:
-                searchResults = searchResults.find_next(class_="title")
-                movieName = searchResults.a.get_text()
-                movieYear = searchResults.span.get_text()
-            except:
-                error.set(f"{name} Not Found On TMDB")
-                return [f"{name}", 0]
+        movieName = searchResults.get_text('h2')
+        # print(movieName)
+        searchResults = soup.find(class_="release_date")
+        movieYear = searchResults.get_text()
         movieYear = movieYear[-4:]
-        name = roughName.replace("-", " ").title()
-        print(f"{name} Found On TMDB")
+        if movieName.find("(") != -1:
+            n = movieName.find("(")
+            movieName = movieName[:n-3]
+        print(f"{movieName} Found On TMDB")
         return [movieName, movieYear]
     else:
-        name = roughName.replace("-", " ").title()
+        name = roughName.replace("%20", " ").title()
+        if name.find("(") != -1:
+            n = name.find("(")
+            name = name[:n-4]
         print(f"{name} Not Found On TMDB")
         error.set(f"{name} Not Found On TMDB")
         return [f"{name}", 0]
@@ -44,6 +42,7 @@ def getMovieTorrentLinks(name, date):
     if " " in name:
         name = name.replace(" ", "%20")
     ytsSearchUrl = f"https://yts.mx/browse-movies/{name}/all/all/0/latest/{date}/all"
+    # print(ytsSearchUrl)
     request = requests.get(ytsSearchUrl, headers=headers)
     soup = BeautifulSoup(request.content, "lxml")
     movieTitle = soup.find(class_="browse-movie-title")
@@ -64,9 +63,9 @@ def getMovieTorrentLinks(name, date):
         return downloadDict
     else:
         name = name.replace("%20", " ").title()
-        print(f"{name} Not Found On YTS")
+        print(f"{name} Not Found On YTS" + f"|{ytsSearchUrl}")
         error.set(f"{name} Not Found On YTS")
-        return {f"{name}": 0}
+        return {f"{name}": ytsSearchUrl}
 
 def browseFiles():
     filename = filedialog.askopenfilename(initialdir = "/", title = "Select the text file containing movie names",filetypes =[("Text Files", "*.txt")])
@@ -114,39 +113,43 @@ def execute():
         for movie in movieList:
             nameDate = getMovieNameYear(movie)
             if nameDate[1] != 0:
-                namelist.append(nameDate[0])
                 quality = choice
                 links = getMovieTorrentLinks(nameDate[0],nameDate[1])
-                if quality == "1080p":
-                    try:
-                        linkList.append(links[f"{quality}.BluRay"])
-                        linkList.append("\n")
-                    except KeyError:
-                        linkList.append(links[f"{quality}.WEB"])
-                        linkList.append("\n")
-                elif quality == "720p":
-                    try:
-                        linkList.append(links[f"{quality}.BluRay"])
-                        linkList.append("\n")
-                    except KeyError:
-                        linkList.append(links[f"{quality}.WEB"])
-                        linkList.append("\n")
+                try:
+                    if quality == "1080p":
+                        try:
+                            linkList.append(links[f"{quality}.BluRay"])
+                            linkList.append("\n")
+                        except KeyError:
+                            linkList.append(links[f"{quality}.WEB"])
+                            linkList.append("\n")
+                    elif quality == "720p":
+                        try:
+                            linkList.append(links[f"{quality}.BluRay"])
+                            linkList.append("\n")
+                        except KeyError:
+                            linkList.append(links[f"{quality}.WEB"])
+                            linkList.append("\n")
+                except:
+                    failList.append(f"#{links} No Download Link Found On YTS")
+                    failList.append("\n")
             else:
                 failList.append(f"#{nameDate[0]} Not Found On TMDb")
                 failList.append("\n")
         path = writeToFile(linkList, pathDir, failList)
-        if check.get() == 1:
-            root.iconify()
-            aria2Download(pathDir, path)
-            pathDir = os.path.realpath(pathDir)
-            done(f"\nMovies Downloaded to {pathDir}")
-        elif check.get() == 2:
-            getTorrents(linkList,namelist)
-            pathDir = os.path.realpath(pathDir)
-            done(f"\n Torrent Files Saved to {pathDir}")
 
-    else:
-        error.set("No Path Or Movie Name Found")
+        # if check.get() == 1:
+        #     root.iconify()
+        #     aria2Download(pathDir, path)
+        #     pathDir = os.path.realpath(pathDir)
+        #     done(f"\nMovies Downloaded to {pathDir}")
+        # elif check.get() == 2:
+        #     getTorrents(linkList,namelist)
+        #     pathDir = os.path.realpath(pathDir)
+        #     done(f"\n Torrent Files Saved to {pathDir}")
+
+    # else:
+        # error.set("No Path Or Movie Name Found")
     
 
 
@@ -197,4 +200,3 @@ check.set(0)
 for child in mainframe.winfo_children(): 
     child.grid_configure(padx=5, pady=5)
 root.mainloop()
-
